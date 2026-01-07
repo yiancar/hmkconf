@@ -20,17 +20,35 @@ export class Commander {
   hidDevice: HIDDevice
   #taskQueue = new TaskQueue()
   #responseQueue: DataView[] = []
+  #hasLoggedUnexpectedReportLength = false
 
   constructor(hidDevice: HIDDevice) {
     this.hidDevice = hidDevice
-    this.hidDevice.oninputreport = (e) => {
-      if (e.data.byteLength === HMK_RAW_HID_EP_SIZE) {
-        this.#responseQueue.push(e.data)
-      } else {
-        console.error(
-          `Unexpected input report length: ${e.data.byteLength} bytes. Expected ${HMK_RAW_HID_EP_SIZE} bytes.`,
-        )
+    this.hidDevice.oninputreport = (event) => {
+      const { data, reportId } = event
+      if (data.byteLength < 1) {
+        if (!this.#hasLoggedUnexpectedReportLength) {
+          console.error(
+            "Received empty HID input report. Ignoring the packet.",
+          )
+          this.#hasLoggedUnexpectedReportLength = true
+        }
+        return
       }
+
+      if (data.byteLength !== HMK_RAW_HID_EP_SIZE) {
+        if (!this.#hasLoggedUnexpectedReportLength) {
+          console.warn(
+            `Unexpected input report length: ${data.byteLength} bytes. Expected ${HMK_RAW_HID_EP_SIZE} bytes. Processing anyway in case the host adjusts report sizing (reportId: ${reportId}).`,
+          )
+          this.#hasLoggedUnexpectedReportLength = true
+        }
+      }
+
+      const view = new DataView(
+        data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength),
+      )
+      this.#responseQueue.push(view)
     }
   }
 
@@ -38,6 +56,7 @@ export class Commander {
     this.hidDevice.oninputreport = null
     await this.#taskQueue.clear()
     this.#responseQueue.length = 0
+    this.#hasLoggedUnexpectedReportLength = false
   }
 
   sendCommand(options: {
