@@ -18,8 +18,10 @@ this program. If not, see <https://www.gnu.org/licenses/>.
   import { advancedKeysStateContext } from "$lib/configurator/context.svelte"
   import { getAdvancedKeyMetadata } from "$lib/configurator/lib/advanced-keys"
   import { advancedKeysQueryContext } from "$lib/configurator/queries/advanced-keys-query.svelte"
+  import { defaultAdvancedKey } from "$lib/libhmk/advanced-keys"
   import AdvancedKeysDeleteDialog from "../advanced-keys-delete-dialog.svelte"
   import ConfigMenuContent from "./config-menu-content.svelte"
+  import { ConfigMenuState, configMenuStateContext } from "./context.svelte"
 
   const advancedKeysState = advancedKeysStateContext.get()
   const { index } = $derived(advancedKeysState)
@@ -29,6 +31,12 @@ this program. If not, see <https://www.gnu.org/licenses/>.
   )
 
   const advancedKey = $derived(advancedKeys?.[index!])
+  const configMenuState = configMenuStateContext.set(
+    new ConfigMenuState(() => ({
+      index: index ?? 0,
+      advancedKey: advancedKey ?? defaultAdvancedKey,
+    })),
+  )
 </script>
 
 {#if !advancedKey}
@@ -49,7 +57,14 @@ this program. If not, see <https://www.gnu.org/licenses/>.
             <Button size="sm" variant="destructive" {...props}>Delete</Button>
           {/snippet}
         </AdvancedKeysDeleteDialog>
-        <Button onclick={() => advancedKeysState.setIndex(null)} size="sm">
+        <Button
+          disabled={!configMenuState.canSave}
+          onclick={async () => {
+            await configMenuState.save?.()
+            advancedKeysState.setIndex(null)
+          }}
+          size="sm"
+        >
           Done
         </Button>
       </div>

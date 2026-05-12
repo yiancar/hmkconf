@@ -24,6 +24,8 @@ export type ConfigMenuStateProps = {
 
 export class ConfigMenuState {
   advancedKey: HMK_AdvancedKey
+  save: (() => Promise<void> | void) | null = $state(null)
+  canSave = $state(true)
 
   #index: number
   #advancedKeysQuery = advancedKeysQueryContext.get()
@@ -35,10 +37,18 @@ export class ConfigMenuState {
   }
 
   updateAction(action: HMK_AdvancedKey["action"]) {
-    this.#advancedKeysQuery.set({
+    return this.#advancedKeysQuery.set({
       offset: this.#index,
       data: [{ ...this.advancedKey, action }],
     })
+  }
+
+  setSave(save: (() => Promise<void> | void) | null) {
+    this.save = save
+  }
+
+  setCanSave(canSave: boolean) {
+    this.canSave = canSave
   }
 }
 

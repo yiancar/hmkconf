@@ -17,29 +17,26 @@ this program. If not, see <https://www.gnu.org/licenses/>.
   import { HMK_AKType, type HMK_AdvancedKey } from "$lib/libhmk/advanced-keys"
   import { cn, type WithoutChildren } from "$lib/utils"
   import type { HTMLAttributes } from "svelte/elements"
-  import { ConfigMenuState, configMenuStateContext } from "./context.svelte"
   import DynamicKeystrokeConfigMenu from "./dynamic-keystroke/dynamic-keystroke-config-menu.svelte"
   import NullBindConfigMenu from "./null-bind/null-bind-config-menu.svelte"
+  import StringMacroConfigMenu from "./string-macro/string-macro-config-menu.svelte"
   import TapHoldConfigMenu from "./tap-hold/tap-hold-config-menu.svelte"
   import ToggleConfigMenu from "./toggle/toggle-config-menu.svelte"
 
   const {
     class: className,
-    index,
     advancedKey,
     ...props
-  }: WithoutChildren<HTMLAttributes<HTMLDivElement>> & {
-    index: number
-    advancedKey: HMK_AdvancedKey
-  } = $props()
+  } = $props<
+    WithoutChildren<HTMLAttributes<HTMLDivElement>> & {
+      index: number
+      advancedKey: HMK_AdvancedKey
+    }
+  >()
 
   const {
     action: { type },
   } = $derived(advancedKey)
-
-  configMenuStateContext.set(
-    new ConfigMenuState(() => ({ index, advancedKey })),
-  )
 </script>
 
 <div
@@ -54,5 +51,7 @@ this program. If not, see <https://www.gnu.org/licenses/>.
     <TapHoldConfigMenu />
   {:else if type === HMK_AKType.TOGGLE}
     <ToggleConfigMenu />
+  {:else if type === HMK_AKType.STRING_MACRO}
+    <StringMacroConfigMenu />
   {/if}
 </div>

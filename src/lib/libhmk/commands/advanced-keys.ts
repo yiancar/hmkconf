@@ -39,6 +39,7 @@ function getAdvancedKeySize(
         numDynamicKeystrokeMaxBindings * 2 + 1, // Dynamic Keystroke
         5, // Tap-Hold
         3, // Toggle
+        4, // String Macro
       )
     )
   }
@@ -143,6 +144,17 @@ export async function getAdvancedKeys(
           },
         })
         break
+      case HMK_AKType.STRING_MACRO:
+        ret.push({
+          layer,
+          key,
+          action: {
+            type,
+            offset: reader.uint16(),
+            len: reader.uint16(),
+          },
+        })
+        break
       case HMK_AKType.NONE:
       default:
         ret.push({ layer, key, action: { type } })
@@ -191,6 +203,12 @@ export async function setAdvancedKeys(
         break
       case HMK_AKType.TOGGLE:
         current.push(action.keycode, ...uint16ToUInt8s(action.tappingTerm))
+        break
+      case HMK_AKType.STRING_MACRO:
+        current.push(
+          ...uint16ToUInt8s(action.offset),
+          ...uint16ToUInt8s(action.len),
+        )
         break
       case HMK_AKType.NONE:
       default:

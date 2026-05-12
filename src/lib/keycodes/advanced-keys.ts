@@ -18,6 +18,7 @@ import {
   ArrowBigRightDashIcon,
   LayersIcon,
   LayoutTemplateIcon,
+  ListVideoIcon,
   ToggleLeftIcon,
 } from "@lucide/svelte"
 import { Keycode } from "$lib/libhmk/keycodes"
@@ -61,6 +62,14 @@ export const advancedKeysKeycodeMetadata: KeycodeMetadata[] = [
     tooltip: "Toggle Key",
     display: [ToggleLeftIcon],
     keycode: Keycode.AK_TOGGLE,
+    webCodes: [],
+    category: "Advanced Keys",
+  },
+  {
+    name: "String Macro",
+    tooltip: "String Macro Key",
+    display: [ListVideoIcon],
+    keycode: Keycode.AK_STRING_MACRO,
     webCodes: [],
     category: "Advanced Keys",
   },

@@ -29,6 +29,7 @@ import type {
   GetGamepadButtonsParams,
   GetGamepadOptionsParams,
   GetKeymapParams,
+  GetStringMacrosParams,
   GetTickRateParams,
   Keyboard,
   ResetProfileParams,
@@ -38,17 +39,25 @@ import type {
   SetGamepadOptionsParams,
   SetKeymapParams,
   SetOptionsParams,
+  SetStringMacrosParams,
   SetTickRateParams,
 } from "."
 import { demoMetadata } from "./metadata"
 
-const { adcResolution, numProfiles, numKeys, numAdvancedKeys, defaultKeymaps } =
-  demoMetadata
+const {
+  adcResolution,
+  numProfiles,
+  numKeys,
+  numAdvancedKeys,
+  defaultKeymaps,
+  stringMacroBufferSize,
+} = demoMetadata
 
 type DemoKeyboardProfileState = {
   keymap: number[][]
   actuationMap: HMK_Actuation[]
   advancedKeys: HMK_AdvancedKey[]
+  stringMacros: number[]
   gamepadButtons: number[]
   gamepadOptions: HMK_GamepadOptions
   tickRate: number
@@ -59,6 +68,7 @@ function defaultProfile(profile: number): DemoKeyboardProfileState {
     keymap: defaultKeymaps[profile],
     actuationMap: Array(numKeys).fill(defaultActuation),
     advancedKeys: Array(numAdvancedKeys).fill(defaultAdvancedKey),
+    stringMacros: Array(stringMacroBufferSize).fill(0),
     gamepadButtons: Array(numKeys).fill(HMK_GamepadButton.NONE),
     gamepadOptions: {
       analogCurve: analogCurvePresets[0].curve,
@@ -153,6 +163,14 @@ export class DemoKeyboard implements Keyboard {
   async setAdvancedKeys({ profile, offset, data }: SetAdvancedKeysParams) {
     for (let i = 0; i < data.length; i++) {
       this.#state.profiles[profile].advancedKeys[offset + i] = data[i]
+    }
+  }
+  async getStringMacros({ profile }: GetStringMacrosParams) {
+    return this.#state.profiles[profile].stringMacros
+  }
+  async setStringMacros({ profile, offset, data }: SetStringMacrosParams) {
+    for (let i = 0; i < data.length; i++) {
+      this.#state.profiles[profile].stringMacros[offset + i] = data[i]
     }
   }
   async getGamepadButtons(params: GetGamepadButtonsParams): Promise<number[]> {

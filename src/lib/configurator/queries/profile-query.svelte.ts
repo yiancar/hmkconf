@@ -26,6 +26,7 @@ import { calibrationQueryContext } from "./calibration.query.svelte"
 import { gamepadQueryContext } from "./gamepad-query.svelte"
 import { keymapQueryContext } from "./keymap-query.svelte"
 import { optionsQueryContext } from "./options-query.svelte"
+import { stringMacrosQueryContext } from "./string-macros-query.svelte"
 import { tickRateQueryContext } from "./tick-rate-query.svelte"
 
 const PROFILE_REFETCH_INTERVAL = 1000
@@ -41,6 +42,7 @@ export class ProfileQuery {
   #keymapQuery = keymapQueryContext.get()
   #actuationQuery = actuationQueryContext.get()
   #advancedKeysQuery = advancedKeysQueryContext.get()
+  #stringMacrosQuery = stringMacrosQueryContext.get()
   #gamepadQuery = gamepadQueryContext.get()
   #tickRateQuery = tickRateQueryContext.get()
 
@@ -59,6 +61,7 @@ export class ProfileQuery {
     this.#keymapQuery.keymap.refetch()
     this.#actuationQuery.actuationMap.refetch()
     this.#advancedKeysQuery.advancedKeys.refetch()
+    this.#stringMacrosQuery.stringMacros.refetch()
     this.#gamepadQuery.gamepadButtons.refetch()
     this.#gamepadQuery.gamepadOptions.refetch()
     this.#tickRateQuery.tickRate.refetch()

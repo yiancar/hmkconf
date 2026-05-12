@@ -31,6 +31,10 @@ import { GamepadQuery, gamepadQueryContext } from "./gamepad-query.svelte"
 import { KeymapQuery, keymapQueryContext } from "./keymap-query.svelte"
 import { OptionsQuery, optionsQueryContext } from "./options-query.svelte"
 import { ProfileQuery, profileQueryContext } from "./profile-query.svelte"
+import {
+  StringMacrosQuery,
+  stringMacrosQueryContext,
+} from "./string-macros-query.svelte"
 import { TickRateQuery, tickRateQueryContext } from "./tick-rate-query.svelte"
 
 export async function optimisticUpdate<T>(options: {
@@ -60,6 +64,7 @@ export function setConfiguratorQueryContext() {
   keymapQueryContext.set(new KeymapQuery())
   actuationQueryContext.set(new ActuationQuery())
   advancedKeysQueryContext.set(new AdvancedKeysQuery())
+  stringMacrosQueryContext.set(new StringMacrosQuery())
   gamepadQueryContext.set(new GamepadQuery())
   tickRateQueryContext.set(new TickRateQuery())
   // Profile query depends on all other queries.

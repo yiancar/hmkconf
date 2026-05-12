@@ -109,6 +109,9 @@ export const keyboardMetadataSchema = z
       .min(1)
       .max(HMK_MAX_NUM_ADVANCED_KEYS)
       .default(4),
+    stringMacroBufferSize: z.int().min(0).max(4096).default(0),
+    stringMacroStepSize: z.literal(3).default(3),
+    stringMacroDelayUnitMs: z.int().min(1).max(255).default(10),
 
     layout: keyboardLayoutSchema,
     defaultKeymap: z.array(z.array(keycodeSchema)).optional(),
@@ -180,6 +183,9 @@ export const demoMetadata = keyboardMetadataSchema.parse({
   numKeys: 69,
   numAdvancedKeys: 32,
   numDynamicKeystrokeMaxBindings: 4,
+  stringMacroBufferSize: 512,
+  stringMacroStepSize: 3,
+  stringMacroDelayUnitMs: 10,
 
   layout: {
     labels: [

@@ -25,7 +25,8 @@ this program. If not, see <https://www.gnu.org/licenses/>.
   import AdvancedKeysActiveBinding from "./advanced-keys-active-binding.svelte"
 
   const advancedKeysState = advancedKeysStateContext.get()
-  const { numAdvancedKeys } = keyboardContext.get().metadata
+  const { numAdvancedKeys, stringMacroBufferSize } =
+    keyboardContext.get().metadata
 
   const advancedKeysQuery = advancedKeysQueryContext.get()
   const { current: advancedKeys } = $derived(advancedKeysQuery.advancedKeys)
@@ -36,13 +37,19 @@ this program. If not, see <https://www.gnu.org/licenses/>.
       0,
     ),
   )
+  const visibleAdvancedKeyMetadata = $derived(
+    advancedKeyMetadata.filter(
+      ({ type }) =>
+        type !== HMK_AKType.STRING_MACRO || stringMacroBufferSize > 0,
+    ),
+  )
 </script>
 
 <div class="grid size-full grid-cols-[28rem_minmax(0,1fr)]">
   <FixedScrollArea class="flex flex-col gap-4 p-4">
     <div class="font-semibold">Add Advanced Key</div>
     <div class="flex flex-col gap-2">
-      {#each advancedKeyMetadata as { type, icon: Icon, title, description } (type)}
+      {#each visibleAdvancedKeyMetadata as { type, icon: Icon, title, description } (type)}
         <Button
           class="size-full gap-4 px-4 py-2"
           onclick={() => advancedKeysState.createOpen(type)}

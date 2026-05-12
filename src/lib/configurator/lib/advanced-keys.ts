@@ -21,6 +21,7 @@ import {
   FileQuestionMarkIcon,
   LayersIcon,
   LayoutTemplateIcon,
+  ListVideoIcon,
   MoveHorizontalIcon,
   ToggleLeftIcon,
 } from "@lucide/svelte"
@@ -83,6 +84,15 @@ export const advancedKeyMetadata: AdvancedKeyMetadata[] = [
       "Toggle between key press and release states. Hold the key for a normal key behavior.",
     numKeys: 1,
     keycodes: [Keycode.AK_TOGGLE],
+  },
+  {
+    type: HMK_AKType.STRING_MACRO,
+    icon: ListVideoIcon,
+    title: "String Macro",
+    description:
+      "Play a per-profile macro sequence with press, tap, release, and delay steps.",
+    numKeys: 1,
+    keycodes: [Keycode.AK_STRING_MACRO],
   },
 ]
 
@@ -167,6 +177,16 @@ export function createAdvancedKey(
           type,
           keycode: keycodes[0],
           tappingTerm: DEFAULT_TAPPING_TERM,
+        },
+      }
+    case HMK_AKType.STRING_MACRO:
+      return {
+        layer,
+        key: keys[0],
+        action: {
+          type,
+          offset: 0,
+          len: 0,
         },
       }
     default:
