@@ -26,6 +26,7 @@ this program. If not, see <https://www.gnu.org/licenses/>.
   import {
     HMK_AKType,
     HMK_StringMacroAction,
+    STRING_MACRO_NODE_NONE,
     type HMK_AKStringMacro,
     type HMK_StringMacroStep,
   } from "$lib/libhmk/advanced-keys"
@@ -38,7 +39,12 @@ this program. If not, see <https://www.gnu.org/licenses/>.
   const advancedKeysQuery = advancedKeysQueryContext.get()
   const stringMacrosQuery = stringMacrosQueryContext.get()
   const keyboard = keyboardContext.get()
-  const { stringMacroBufferSize, stringMacroDelayUnitMs } = keyboard.metadata
+  const {
+    stringMacroBufferSize,
+    stringMacroNodeCount,
+    stringMacroNodeSize,
+    stringMacroDelayUnitMs,
+  } = keyboard.metadata
 
   const action = $derived(
     configMenuState.advancedKey.action as HMK_AKStringMacro,
@@ -49,97 +55,142 @@ this program. If not, see <https://www.gnu.org/licenses/>.
   let loadedKey = $state("")
   let draftSteps = $state<HMK_StringMacroStep[]>([])
 
+  function getNodeOffset(node: number) {
+    return node * stringMacroNodeSize
+  }
+
+  function readNodeNext(node: number) {
+    if (!stringMacros || node >= stringMacroNodeCount) {
+      return STRING_MACRO_NODE_NONE
+    }
+
+    const offset = getNodeOffset(node)
+    if (offset + 4 >= stringMacros.length) {
+      return STRING_MACRO_NODE_NONE
+    }
+
+    return stringMacros[offset + 3] | (stringMacros[offset + 4] << 8)
+  }
+
   function decodeSteps() {
-    if (!stringMacros || action.len % 3 !== 0) return []
+    if (!stringMacros || action.firstNode === STRING_MACRO_NODE_NONE) return []
 
     const ret: HMK_StringMacroStep[] = []
-    for (let i = 0; i < action.len; i += 3) {
+    let node = action.firstNode
+    const visited = new Set<number>()
+    while (
+      node !== STRING_MACRO_NODE_NONE &&
+      node < stringMacroNodeCount &&
+      !visited.has(node)
+    ) {
+      visited.add(node)
+      const offset = getNodeOffset(node)
       ret.push({
-        keycode: stringMacros[action.offset + i] ?? Keycode.KC_NO,
-        action:
-          stringMacros[action.offset + i + 1] ?? HMK_StringMacroAction.TAP,
-        delay: stringMacros[action.offset + i + 2] ?? 1,
+        keycode: stringMacros[offset] ?? Keycode.KC_NO,
+        action: stringMacros[offset + 1] ?? HMK_StringMacroAction.TAP,
+        delay: stringMacros[offset + 2] ?? 1,
       })
+      node = readNodeNext(node)
     }
     return ret
   }
 
-  function encodeSteps(steps: HMK_StringMacroStep[]) {
-    return steps.flatMap(({ keycode, action, delay }) => [
+  function encodeNode(
+    { keycode, action, delay }: HMK_StringMacroStep,
+    next: number,
+  ) {
+    return [
       keycode,
       action,
       delay,
-    ])
+      next & 0xff,
+      (next >> 8) & 0xff,
+    ]
   }
 
-  const savedBytes = $derived(encodeSteps(decodeSteps()))
-  const draftBytes = $derived(encodeSteps(draftSteps))
-  const draftOffset = $derived(allocateMacro(draftBytes))
-  const hasStorageError = $derived(draftOffset === null)
+  const savedSteps = $derived(decodeSteps())
+  const draftNodes = $derived(allocateMacro(draftSteps))
+  const hasStorageError = $derived(draftNodes === null)
   const hasUnsavedChanges = $derived(
-    draftBytes.length !== savedBytes.length ||
-      draftBytes.some((byte, i) => byte !== savedBytes[i]),
+    draftSteps.length !== savedSteps.length ||
+      draftSteps.some(
+        (step, i) =>
+          step.keycode !== savedSteps[i]?.keycode ||
+          step.action !== savedSteps[i]?.action ||
+          step.delay !== savedSteps[i]?.delay,
+      ),
   )
 
   $effect(() => {
     if (!stringMacros) return
 
-    const key = `${action.offset}:${action.len}:${savedBytes.join(",")}`
+    const key = `${action.firstNode}:${savedSteps
+      .map(({ keycode, action, delay }) => `${keycode}:${action}:${delay}`)
+      .join(",")}`
     if (key === loadedKey) return
 
-    draftSteps = decodeSteps()
+    draftSteps = savedSteps
     selectedStep = ""
     loadedKey = key
   })
 
-  function allocateMacro(bytes: number[]) {
-    if (!advancedKeys) return null
-    if (
-      action.offset + bytes.length <= stringMacroBufferSize &&
-      bytes.length <= action.len
+  function markReachableNodes(firstNode: number, used: boolean[]) {
+    let node = firstNode
+    const visited = new Set<number>()
+    while (
+      node !== STRING_MACRO_NODE_NONE &&
+      node < stringMacroNodeCount &&
+      !visited.has(node)
     ) {
-      return action.offset
+      visited.add(node)
+      used[node] = true
+      node = readNodeNext(node)
     }
+  }
 
-    const used = Array(stringMacroBufferSize).fill(false)
-    for (const advancedKey of advancedKeys) {
+  function allocateMacro(steps: HMK_StringMacroStep[]) {
+    if (!advancedKeys || !stringMacros) return null
+    if (steps.length === 0) return []
+
+    const used = Array(stringMacroNodeCount).fill(false)
+    for (const [i, advancedKey] of advancedKeys.entries()) {
+      if (i === configMenuState.index) continue
+
       const otherAction = advancedKey.action
-      if (
-        otherAction.type !== HMK_AKType.STRING_MACRO ||
-        otherAction === action
-      )
-        continue
-      for (let i = 0; i < otherAction.len; i++) {
-        if (otherAction.offset + i < used.length) {
-          used[otherAction.offset + i] = true
-        }
-      }
+      if (otherAction.type !== HMK_AKType.STRING_MACRO) continue
+      markReachableNodes(otherAction.firstNode, used)
     }
 
-    for (
-      let offset = 0;
-      offset <= stringMacroBufferSize - bytes.length;
-      offset++
-    ) {
-      if (used.slice(offset, offset + bytes.length).every((v) => !v)) {
-        return offset
-      }
+    const nodes: number[] = []
+    for (let node = 0; node < used.length && nodes.length < steps.length; node++) {
+      if (!used[node]) nodes.push(node)
     }
-    return null
+
+    return nodes.length === steps.length ? nodes : null
   }
 
   async function commitDraftSteps() {
-    const bytes = encodeSteps(draftSteps)
-    const offset = draftOffset
-    if (offset === null) return
+    if (!stringMacros) return
 
-    if (bytes.length > 0) {
-      await stringMacrosQuery.set({ offset, data: bytes })
+    const nodes = draftNodes
+    if (nodes === null) return
+
+    if (draftSteps.length > 0) {
+      const data = [...stringMacros]
+      for (let i = 0; i < draftSteps.length; i++) {
+        const node = nodes[i]
+        const next = nodes[i + 1] ?? STRING_MACRO_NODE_NONE
+        const offset = getNodeOffset(node)
+        data.splice(offset, stringMacroNodeSize, ...encodeNode(draftSteps[i], next))
+      }
+      await stringMacrosQuery.set({
+        offset: 0,
+        data: data.slice(0, stringMacroBufferSize),
+      })
     }
     await configMenuState.updateAction({
       type: HMK_AKType.STRING_MACRO,
-      offset,
-      len: bytes.length,
+      firstNode: nodes[0] ?? STRING_MACRO_NODE_NONE,
     })
   }
 

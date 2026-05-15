@@ -64,7 +64,7 @@ this program. If not, see <https://www.gnu.org/licenses/>.
       case HMK_AKType.TOGGLE:
         return [action.keycode]
       case HMK_AKType.STRING_MACRO:
-        return `${action.len / 3} steps`
+        return "String macro"
       default:
         return []
     }

@@ -36,6 +36,10 @@ export class ConfigMenuState {
     this.advancedKey = $derived(advancedKey)
   }
 
+  get index() {
+    return this.#index
+  }
+
   updateAction(action: HMK_AdvancedKey["action"]) {
     return this.#advancedKeysQuery.set({
       offset: this.#index,

@@ -106,6 +106,8 @@ export enum HMK_StringMacroAction {
   RELEASE,
 }
 
+export const STRING_MACRO_NODE_NONE = 0xffff
+
 export const hmkStringMacroStepSchema = z.object({
   keycode: uint8Schema,
   action: z.enum(HMK_StringMacroAction),
@@ -116,8 +118,7 @@ export type HMK_StringMacroStep = z.infer<typeof hmkStringMacroStepSchema>
 
 export const hmkAKStringMacroSchema = z.object({
   type: z.literal(HMK_AKType.STRING_MACRO),
-  offset: uint16Schema,
-  len: uint16Schema,
+  firstNode: uint16Schema,
 })
 
 export type HMK_AKStringMacro = z.infer<typeof hmkAKStringMacroSchema>

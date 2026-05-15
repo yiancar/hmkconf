@@ -34,6 +34,7 @@ import {
   HMK_AKType,
   HMK_DKSAction,
   HMK_NullBindBehavior,
+  STRING_MACRO_NODE_NONE,
   type HMK_AdvancedKey,
 } from "$lib/libhmk/advanced-keys"
 import { Keycode } from "$lib/libhmk/keycodes"
@@ -185,8 +186,7 @@ export function createAdvancedKey(
         key: keys[0],
         action: {
           type,
-          offset: 0,
-          len: 0,
+          firstNode: STRING_MACRO_NODE_NONE,
         },
       }
     default:
